@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client</title>
+</head>
+<body>
+    321
+    <input type='text'>
+    <button type="submit">Submit</button>
+    <p id="master">I am master</p>
+    <button id="refresh">Refresh</button>
+    <button id="new-client">New Client</button>
+    <ul id="messages"></ul>
+    <script>
+        const { ipcRenderer } = require('electron');
+        const q = document.querySelector.bind(document);
+        const messages = q('#messages');
+        function addMessage(text) {
+            const message = document.createElement('li');
+            messages.innerHTML = text;
+            messages.appendChild(message);
+        }
+        function refreshMaster() {
+            ipcRenderer.invoke('fetch-master').then((isMaster) => {
+                q('#master').style.display = isMaster ? 'block' : 'none';
+            })
+        }
+        refreshMaster();
+        q('#refresh').addEventListener('click', refreshMaster);
+        q('#new-client').addEventListener('click', () => {
+            ipcRenderer.invoke('new-client').then(() => {
+                addMessage('new-client');
+            })
+        });
+    </script>
+</body>
+</html>

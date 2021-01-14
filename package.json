@@ -1,0 +1,20 @@
+{
+  "name": "kimi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "ipc/server.js",
+  "dependencies": {
+    "electron": "^11.2.0",
+    "electron-connect": "^0.6.3",
+    "gulp": "^4.0.2",
+    "node-ipc": "^9.1.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "server": "electron .",
+    "start": "gulp serve"
+  },
+  "author": "",
+  "license": "ISC"
+}
