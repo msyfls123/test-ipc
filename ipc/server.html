@@ -6,8 +6,22 @@
     <title>Server</title>
 </head>
 <body>
-    12345
     <input type='text'>
     <button type="submit">Submit</button>
+    <ul id="messages"></ul>
+    <script>
+         const { ipcRenderer } = require('electron');
+        const q = document.querySelector.bind(document);
+        const messages = q('#messages');
+        function addMessage(text) {
+            const message = document.createElement('li');
+            const time = (new Date()).toLocaleTimeString();
+            message.innerHTML = `${time} - ${text}`;
+            messages.appendChild(message);
+        }
+        ipcRenderer.on('message', (event, message) => {
+            addMessage(message);
+        });
+    </script>
 </body>
 </html>

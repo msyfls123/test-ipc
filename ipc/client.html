@@ -19,20 +19,23 @@
         const messages = q('#messages');
         function addMessage(text) {
             const message = document.createElement('li');
-            messages.innerHTML = text;
+            const time = (new Date()).toLocaleTimeString();
+            message.innerHTML = `${time} - ${text}`;
             messages.appendChild(message);
         }
         function refreshMaster() {
             ipcRenderer.invoke('fetch-master').then((isMaster) => {
+                console.log(isMaster);
                 q('#master').style.display = isMaster ? 'block' : 'none';
             })
         }
         refreshMaster();
         q('#refresh').addEventListener('click', refreshMaster);
         q('#new-client').addEventListener('click', () => {
-            ipcRenderer.invoke('new-client').then(() => {
-                addMessage('new-client');
-            })
+            ipcRenderer.invoke('new-client')
+        });
+        ipcRenderer.on('message', (event, message) => {
+            addMessage(message);
         });
     </script>
 </body>

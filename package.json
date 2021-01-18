@@ -2,7 +2,7 @@
   "name": "kimi",
   "version": "1.0.0",
   "description": "",
-  "main": "ipc/server.js",
+  "main": "ipc/index.js",
   "dependencies": {
     "electron": "^11.2.0",
     "electron-connect": "^0.6.3",
