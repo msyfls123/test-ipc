@@ -6,13 +6,11 @@ const constants = require('./constants');
 
 function newServer() {
     const child = CP.spawn(process.execPath, ['ipc/index.js', '--server'], { detached: true  });
-    // child.stdout.pipe(process.stdin);
     return child
 }
 
 function newClient() {
     const child = CP.spawn(process.execPath, ['ipc/index.js', '--client'], { detached: true });
-    // child.stdout.pipe(process.stdin);
     return child;
 }
 
@@ -48,19 +46,24 @@ app.whenReady().then(() => {
         ipc.of[ipcId].on('connect', () => {
             isCreatingServer = false;
             ipc.of[ipcId].emit('connect-id');
+
+            if (!process.argv.includes('--client')) {
+                ipc.of[ipcId].off('error', startServer);
+            }
             
             if (timeout) {
                 clearTimeout(timeout);
             }
             timeout = null;
-        //     console.log('created');
+
             if (bound) return;
             bound = true;
-        //     console.log('boound');
+
             ipc.of[ipcId].on('disconnect', () => {
                 if (isCreatingServer) {
                     return;
                 }
+                // 过快的 kill serve 可能出现 timeout 错误被清除的现象
                 if (timeout) {
                     clearTimeout(timeout);
                 }
@@ -68,40 +71,29 @@ app.whenReady().then(() => {
                 timeout = setTimeout(() => {
                     if (app.requestSingleInstanceLock()) {
                         window.webContents.send('message', 'server is dead, help');
-                        console.log(123);
                         newServer();
                     }
                 }, 1000 * id);
             });
-            ipc.of[ipcId].on('your-id', (iid) => {
-                id = iid;
+            ipc.of[ipcId].on('your-id', (mineId) => {
+                id = mineId;
             })
         });
         
     });
-    function startServer() {
-        // console.log(data.code);
-        // if (app.requestSingleInstanceLock()) {
-        //     isCreatingServer = true;
-        //     window.webContents.send('message', 'server is dead, help');
-        //     newServer();
-        // } else {
-        //     window.webContents.send('message', 'i am not master');
-        // }
-        if (!process.argv.includes('--client')) {
+    function startServer(err) {
+        if (['ENOENT', 'ECONNREFUSED'].includes(err.code)) {
             newServer();
-            console.log(124);
         }
-        ipc.of[ipcId].off('error', startServer);
     }
-    ipc.of[ipcId].on('error', startServer)
+    if (!process.argv.includes('--client')) {
+        ipc.of[ipcId].on('error', startServer)
+    }
     ipcMain.handle('fetch-master', () => {
-        // app.requestSingleInstanceLock();
         return app.hasSingleInstanceLock();
     })
     ipcMain.handle('new-client', () => {
         ipc.of[constants.ipc.id].emit('new-client');
-        // newClient();
     })
 })
 

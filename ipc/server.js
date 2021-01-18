@@ -5,15 +5,11 @@ const constants = require('./constants')
 
 function newClient() {
     const child = CP.spawn(process.execPath, ['ipc/index.js', '--client'], { detached: true });
-    // child.stdout.pipe(process.stdin);
     return child;
 }
 
 const lock = app.requestSingleInstanceLock();
 
-// if (!lock) {
-//     app.quit();
-// }
 
 let id = 0;
 
@@ -44,7 +40,3 @@ app.whenReady().then(() => {
     });
     ipc.server.start();
 })
-
-// app.on('will-quit', () => {
-//     app.releaseSingleInstanceLock();
-// });
