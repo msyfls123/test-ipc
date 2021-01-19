@@ -1,4 +1,5 @@
 node_modules/
 materials/
+dist/
 
 package-lock.json

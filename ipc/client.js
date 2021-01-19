@@ -25,7 +25,15 @@ app.whenReady().then(() => {
     });
     window.loadURL(`file://${__dirname}/client.html`);
     // window.webContents.openDevTools({ mode: 'detach' });
-    client.create(window);
+
+    const log = (message) => {
+        if (window && !window.isDestroyed()) {
+            window.webContents.send('message', message);
+        }
+    }
+    if (process.env.NODE_ENV === 'development') {
+        client.create(window);
+    }
     const ipcId = constants.ipc.id;
     ipc.config.retry = 1500;
     ipc.config.silent = true;
@@ -40,6 +48,9 @@ app.whenReady().then(() => {
     if (!process.argv.includes('--client')) {
         newServer()
     }
+    ipc.of[ipcId].on('error', (err) => {
+        log(err.code);
+    })
     ipcMain.handle('fetch-master', () => {
         return app.hasSingleInstanceLock();
     })
