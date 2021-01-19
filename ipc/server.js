@@ -19,6 +19,9 @@ const backupId = constants.ipc.backupId;
 let isCreating = false;
 let bound = false;
 let serverBound = false;
+let shouldExit = false;
+
+const clients = new Set();
 
 app.whenReady().then(() => {
 
@@ -31,29 +34,43 @@ app.whenReady().then(() => {
     });
     window.loadURL(`file://${__dirname}/server.html`);
     // window.webContents.openDevTools({ mode: 'detach' });
+
+    const log = (message) => {
+        if (window && !window.isDestroyed()) {
+            window.webContents.send('message', message);
+        }
+    }
+
     ipc.config.id = constants.ipc.id;
     ipc.config.retry = 1500;
     ipc.config.logger = function(...data) {
-        window.webContents.send('message', data.join(';'));
+        if (shouldExit) return;
+        log(data.join(';'));
     }
     ipc.serve(() => {
         ipc.server.on('new-client', (data, socket) => {
             const cid = newClient().pid;
-            window.webContents.send('message', `client ${cid} was created`);
+            log(`client pid: ${cid} was created`);
             ipc.server.emit(socket, 'new-client-created', cid);
             ipc.server.broadcast('new-client-created', 'xxxx');
         });
         ipc.server.on('connect', (socket) => {
             socket.id = `${parseInt(Math.random() * 10000, 10)}`;
+            clients.add(socket.id);
             setTimeout(() => {
-                window.webContents.send('message', `client ${socket.id} connected`);
+                log(`client ${socket.id} connected`);
             }, 500)
             if (serverBound) return;
             serverBound = true;
             ipc.server.on(
                 'socket.disconnected',
                 function(socket, destroyedSocketID) {
-                    window.webContents.send('message', `client ${socket.id} has disconnected!`);
+                    log(`client ${socket.id} has disconnected!`);
+                    clients.delete(socket.id);
+                    if (clients.size === 0) {
+                        shouldExit = true;
+                        backupIpc.of[backupId].emit('force-exit');
+                    }
                 }
             );
         });
@@ -68,14 +85,18 @@ app.whenReady().then(() => {
             if (bound) return;
             bound = true;
             backupIpc.of[backupId].on('disconnect', () => {
-                window.webContents.send('message', `backup is starting`)
+                if (shouldExit) {
+                    app.exit()
+                    return
+                };
+                log(`backup iis starting`)
                 startBackup();
             })
         });
     })
 
     function resumeBackup(err) {
-        window.webContents.send('message', `backup is starting`)
+        log(`backup is starting`)
         if (['ENOENT', 'ECONNREFUSED'].includes(err.code)) {
             startBackup()
         }

@@ -12,6 +12,7 @@ const { backupId } = constants.ipc;
 
 let isCreating = false;
 let bound = false;
+let exit = false;
 
 app.whenReady().then(() => {
 
@@ -24,24 +25,39 @@ app.whenReady().then(() => {
     });
     window.loadURL(`file://${__dirname}/backup.html`);
     // window.webContents.openDevTools({ mode: 'detach' });
+
+    const log = (message) => {
+        if (window && !window.isDestroyed()) {
+            window.webContents.send('message', message);
+        }
+    }
+
     ipc.config.id = backupId;
     ipc.config.retry = 1500;
     ipc.serve(() => {
         
         ipc.server.on('connect', () => {
             setTimeout(() => {
-                window.webContents.send('message', 'server connected');
+                log('server connected');
             }, 500)
             isCreating = false;
             if (bound) return;
             bound = true;
             ipc.server.on('socket.disconnected', () => {
-                window.webContents.send('message', 'server disconnect');
+                if (exit) {
+                    return;
+                }
+                log('server disconnect');
+
                 if (isCreating) return;
                 isCreating = true;
                 newServer();
             })
-        })
+        });
+        ipc.server.on('force-exit', () => {
+            exit = true;
+            app.exit();
+        });
     });
     ipc.server.start();
 })
