@@ -14,13 +14,6 @@ function newClient() {
     return child;
 }
 
-let bound = false;
-
-let isCreatingServer = false;
-let timeout = null;
-
-let id = 0;
-
 app.whenReady().then(() => {
 
     const window = new BrowserWindow({
@@ -43,51 +36,9 @@ app.whenReady().then(() => {
         ipc.of[ipcId].on('new-client-created', (data) => {
             window.webContents.send('message', `client ${data} was created`)
         });
-        ipc.of[ipcId].on('connect', () => {
-            isCreatingServer = false;
-            ipc.of[ipcId].emit('connect-id');
-
-            if (!process.argv.includes('--client')) {
-                ipc.of[ipcId].off('error', startServer);
-            }
-            
-            if (timeout) {
-                clearTimeout(timeout);
-            }
-            timeout = null;
-
-            if (bound) return;
-            bound = true;
-
-            ipc.of[ipcId].on('disconnect', () => {
-                if (isCreatingServer) {
-                    return;
-                }
-                // 过快的 kill serve 可能出现 timeout 错误被清除的现象
-                if (timeout) {
-                    clearTimeout(timeout);
-                }
-                isCreatingServer = true;
-                timeout = setTimeout(() => {
-                    if (app.requestSingleInstanceLock()) {
-                        window.webContents.send('message', 'server is dead, help');
-                        newServer();
-                    }
-                }, 1000 * id);
-            });
-            ipc.of[ipcId].on('your-id', (mineId) => {
-                id = mineId;
-            })
-        });
-        
     });
-    function startServer(err) {
-        if (['ENOENT', 'ECONNREFUSED'].includes(err.code)) {
-            newServer();
-        }
-    }
     if (!process.argv.includes('--client')) {
-        ipc.of[ipcId].on('error', startServer)
+        newServer()
     }
     ipcMain.handle('fetch-master', () => {
         return app.hasSingleInstanceLock();

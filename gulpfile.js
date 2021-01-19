@@ -8,8 +8,10 @@ gulp.task('serve', function () {
     
     // Restart browser process
     gulp.watch([
+        'ipc/index.js',
         'ipc/server.js',
-        'ipc/client.js'
+        'ipc/client.js',
+        'ipc/backup.js',
     ], electron.restart);
     
     // Reload renderer process
