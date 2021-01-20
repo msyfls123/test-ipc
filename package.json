@@ -16,7 +16,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "server": "electron .",
     "start": "NODE_ENV=development gulp serve",
-    "build": "electron-builder -wm"
+    "build": "electron-builder -wm -p never"
   },
   "build": {
     "win": {
